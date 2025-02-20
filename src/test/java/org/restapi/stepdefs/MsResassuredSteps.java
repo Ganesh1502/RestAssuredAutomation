@@ -8,8 +8,12 @@ import io.restassured.RestAssured;
 import io.restassured.specification.RequestSpecification;
 import io.restassured.response.Response;
 
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Properties;
 
 import static io.restassured.RestAssured.*;
 import static junit.framework.Assert.assertEquals;
@@ -18,7 +22,6 @@ import static junit.framework.Assert.assertTrue;
 public class MsResassuredSteps {
     private Response response;
     private RequestSpecification request;
-    private String requestBody;
 
     @Given("base uri {string}")
     public void baseUri(String baseUri) {
@@ -33,7 +36,6 @@ public class MsResassuredSteps {
 
     @Then("log all the response")
     public void logResponse() {
-
         response.then().log().all();
     }
 
@@ -82,6 +84,29 @@ public class MsResassuredSteps {
     @Then("the response code should be {int}")
     public void responseCode(int code) {
         assertEquals("Unexpected response code", code, response.getStatusCode());
+    }
+
+    @Then("store the tag value {string}")
+    public void storeData(String tagKey) throws FileNotFoundException {
+        String tagValue = response.jsonPath().getString(tagKey);
+        storeInPropertiesFile(tagKey, tagValue);
+    }
+    /**
+     * This method  will store the temp data from the responses
+     */
+    private void storeInPropertiesFile(String key, String value) throws FileNotFoundException {
+        Properties property  = new Properties();
+        try{
+            FileOutputStream output = new FileOutputStream("data.properties", true);
+            property.setProperty(key, value);
+            property.store(output, "Updated Tag Value");
+        }
+        catch(FileNotFoundException e){
+            System.out.println(e.getMessage());
+
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
 

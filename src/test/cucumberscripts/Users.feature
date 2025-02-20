@@ -1,4 +1,4 @@
-Feature: create a sample post request
+Feature: Test User scenarios
 
   Background: set the base uri
     Given base uri "https://reqres.in/"
@@ -9,6 +9,7 @@ Feature: create a sample post request
     When "POST" request is sent
     Then log all the response
     Then the response code should be 201
+    Then store the tag value "name"
 
     Scenario: Get the users list
       Given set end point "api/users"
