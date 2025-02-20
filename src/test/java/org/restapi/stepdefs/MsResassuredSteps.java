@@ -7,7 +7,9 @@ import io.cucumber.java.en.When;
 import io.restassured.RestAssured;
 import io.restassured.specification.RequestSpecification;
 import io.restassured.response.Response;
+import org.json.JSONObject;
 
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -22,7 +24,7 @@ import static junit.framework.Assert.assertTrue;
 public class MsResassuredSteps {
     private Response response;
     private RequestSpecification request;
-
+private String payLoad;
     @Given("base uri {string}")
     public void baseUri(String baseUri) {
         RestAssured.baseURI = baseUri;
@@ -42,12 +44,42 @@ public class MsResassuredSteps {
     @When("payload is set from path {string}")
     public void setPayload(String jsonPath) {
         try {
-            String payLoad = new String(Files.readAllBytes(Paths.get(jsonPath)));
+            payLoad = new String(Files.readAllBytes(Paths.get(jsonPath)));
             request.body(payLoad);
         } catch (Exception e) {
             System.out.println(e.getMessage());
         }
     }
+
+    @Then("set the tag value {string} from stored property {string}")
+    public void setFromProperty(String tag, String key) {
+        String path = "data.properties";
+        Properties property = new Properties();
+
+        try (FileInputStream input = new FileInputStream(path)) {
+            property.load(input);
+            String tagValue = property.getProperty(key);
+
+            if (tagValue != null && payLoad != null) {
+                // Convert stored payload string to JSON object
+                JSONObject jsonPayload = new JSONObject(payLoad);
+
+                // Add/Update the dynamic tag key with value from properties
+                jsonPayload.put(tag, tagValue);
+
+                // Set updated payload back to request body
+                request.body(jsonPayload.toString());
+                payLoad = jsonPayload.toString();  // Update stored payload
+
+                System.out.println("Updated Payload: " + jsonPayload.toString());
+            } else {
+                System.out.println("Property key not found: " + key);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
 
     @When("{string} request is sent")
     public void sendRequest(String method) {
@@ -108,5 +140,6 @@ public class MsResassuredSteps {
             throw new RuntimeException(e);
         }
     }
+
 }
 
